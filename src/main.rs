@@ -1,5 +1,4 @@
-use std::process::exit;
-
+mod options;
 mod util;
 
 fn main() {
@@ -8,52 +7,51 @@ fn main() {
     let mut infile: String = String::new();
     let mut outfile: String = String::new();
 
-    for arg in args.iter().skip(1) {
+    let mut options = options::XXDOptions {
+        ..Default::default()
+    };
+    let mut i = 1;
+    while let Some(arg) = args.get(i) {
         if arg.starts_with("-") {
             // Handle flags
             match arg.as_str() {
-                "-a" | "-autoskip" => {
-                    println!("autoskip");
-                }
                 "-b" | "-bits" => {
-                    println!("bits");
+                    options.bits = true;
                 }
                 "-c" | "-cols" => {
-                    println!("cols");
-                }
-                "-E" | "-EBCDIC" => {
-                    println!("EBCDIC");
+                    options.cols = options::match_option(&args, i + 1);
+                    if options.cols.unwrap() > 256 {
+                        println!("xxd: invalid number of columns (max. 256).");
+                        std::process::exit(1);
+                    }
+                    i += 1;
                 }
                 "-g" | "-groupsize" => {
-                    println!("group");
+                    options.groupsize = options::match_option(&args, i + 1);
+                    i += 1;
                 }
                 "-h" | "-help" => {
                     util::help(0);
                 }
                 "-i" | "-include" => {
-                    println!("include");
+                    options.include = true;
                 }
                 "-l" | "-len" => {
-                    println!("len");
+                    options.len = options::match_option(&args, i + 1);
+                    i += 1;
                 }
                 "-p" | "-ps" | "-postscript" | "-plain" => {
-                    println!("ps");
+                    options.postscript = true;
                 }
                 "-r" | "-revert" => {
-                    println!("revert");
-                }
-                "-seek" => {
-                    println!("seek");
-                }
-                "-s" => {
-                    println!("seek");
+                    options.revert = true;
                 }
                 "-u" => {
-                    println!("upper");
+                    options.uppercase = true;
                 }
                 "-v" | "-version" => {
                     println!("xxd 2024-12-27 by Owen Wang.");
-                    exit(0)
+                    std::process::exit(0)
                 }
                 _ => {
                     util::help(1);
@@ -68,6 +66,7 @@ fn main() {
                 util::help(1);
             }
         }
+        i += 1;
     }
-    util::run(infile, outfile);
+    util::run(&options, infile, outfile);
 }

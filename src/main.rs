@@ -68,5 +68,11 @@ fn main() {
         }
         i += 1;
     }
+
+    if options.bits && options.postscript {
+        println!("xxd: only one of -b, -e, -u, -p, -i can be used");
+        std::process::exit(1);
+    }
+
     util::run(&options, infile, outfile);
 }

@@ -52,11 +52,33 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
         };
 
         let mut row_ascii = String::new();
+        let mut i = 0;
 
         if options.postscript {
+            while let Some(byte) = data.get(i) {
+                match options.len {
+                    Some(len) => {
+                        if i == len {
+                            break;
+                        }
+                    }
+                    None => {}
+                }
+
+                if options.uppercase {
+                    output.push_str(&format!("{:0>byte_width$X}", byte));
+                } else {
+                    output.push_str(&format!("{:0>byte_width$x}", byte));
+                }
+
+                i += 1;
+                if i % cols == 0 {
+                    output.push('\n');
+                }
+            }
+            output.push('\n');
         } else if options.include {
         } else {
-            let mut i = 0;
             while let Some(byte) = data.get(i) {
                 // Check if exceeded -l len
                 match options.len {
@@ -67,6 +89,7 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
                     }
                     None => {}
                 }
+
                 if i == 0 || i % cols == 0 {
                     // ASCII representation
                     if i != 0 {
@@ -119,17 +142,17 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
         }
     } else {
         // TODO: revert input
-        write_reverse(data, &mut output, options.postscript);
+        write_revert(data, &mut output, options.postscript);
     }
 
     if !outfile.is_empty() {
         std::fs::write(outfile, output).expect("Unable to write to file.");
     } else {
-        println!("{}", output);
+        print!("{}", output);
     }
 }
 
-fn write_reverse(data: &[u8], output: &mut String, postscript: bool) {
+fn write_revert(data: &[u8], output: &mut String, postscript: bool) {
     let mut bytes = Vec::new();
     let mut i = 0;
     if !postscript {

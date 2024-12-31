@@ -12,13 +12,13 @@ pub fn run(options: &options::XXDOptions, infile: String, outfile: String) {
         // read_stdin(options);
     }
 
-    // Read from infile
-    let data = std::fs::read(infile).expect("Unable to read file.");
-
-    write_formatted(&data, options, outfile);
+    write_formatted(options, infile, outfile);
 }
 
-fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) {
+fn write_formatted(options: &options::XXDOptions, infile: String, outfile: String) {
+    // Read from infile
+    let data = std::fs::read(infile.clone()).expect("Unable to read file.");
+
     let mut output = String::new().to_owned();
 
     if !options.revert {
@@ -78,6 +78,44 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
             }
             output.push('\n');
         } else if options.include {
+            // TODO
+            let include_name = infile.replace('.', "_");
+            output.push_str(&format!("unsigned char {}[] = {{", include_name));
+
+            while let Some(byte) = data.get(i) {
+                match options.len {
+                    Some(len) => {
+                        if i == len {
+                            break;
+                        }
+                    }
+                    None => {}
+                }
+
+                if i % cols == 0 {
+                    output.push_str("\n  ");
+                }
+
+                if !options.bits {
+                    if options.uppercase {
+                        output.push_str(&format!("{:0>byte_width$X}", byte));
+                    } else {
+                        output.push_str(&format!("{:0>byte_width$x}", byte));
+                    }
+                } else {
+                    output.push_str(&format!("{:0>byte_width$b}", byte));
+                }
+
+                i += 1;
+                if i < data.len() {
+                    output.push_str(", ");
+                }
+            }
+            output.push_str(&format!(
+                "\n}};\nunsigned int {}_len = {}\n",
+                include_name,
+                data.len()
+            ));
         } else {
             while let Some(byte) = data.get(i) {
                 // Check if exceeded -l len
@@ -142,7 +180,7 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
         }
     } else {
         // TODO: revert input
-        write_revert(data, &mut output, options.postscript);
+        write_revert(&data, &mut output, options.postscript);
     }
 
     if !outfile.is_empty() {

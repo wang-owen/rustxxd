@@ -15,7 +15,7 @@ impl Default for XXDOptions {
     fn default() -> XXDOptions {
         Self {
             bits: false,
-            cols: Some(16),
+            cols: None,
             groupsize: None,
             include: false,
             len: None,

@@ -21,6 +21,10 @@ pub fn run(options: &options::XXDOptions, infile: String, outfile: String) {
 fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) {
     let mut output = String::new().to_owned();
 
+    let byte_width = match options.bits {
+        true => 8,
+        false => 2,
+    };
     let groupsize = match options.groupsize {
         Some(size) => size,
         None => {
@@ -31,7 +35,20 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
             }
         }
     };
-    let cols = options.cols.unwrap();
+    let cols = match options.cols {
+        Some(size) => size,
+        None => {
+            if options.bits {
+                6
+            } else if options.include {
+                12
+            } else if options.postscript {
+                30
+            } else {
+                16
+            }
+        }
+    };
 
     let mut row_ascii = String::new();
 
@@ -40,7 +57,6 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
     } else {
         let mut i = 0;
         while let Some(byte) = data.get(i) {
-            // Offset
             if i == 0 || i % cols == 0 {
                 // ASCII representation
                 if i != 0 {
@@ -50,20 +66,17 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
 
                 output.push('\n');
 
-                if !options.bits {
-                    output.push_str(&format!("{:0>8x}:", i));
-                } else {
-                    output.push_str(&format!("{:0>8}:", i));
-                }
+                // Offset
+                output.push_str(&format!("{:0>8x}:", i));
             }
 
             if i % groupsize == 0 {
                 output.push(' ');
             }
             if !options.bits {
-                output.push_str(&format!("{:0>2x}", byte));
+                output.push_str(&format!("{:0>byte_width$x}", byte));
             } else {
-                output.push_str(&format!("{:0>2}", byte));
+                output.push_str(&format!("{:0>byte_width$b}", byte));
             }
 
             if *byte >= 32 && *byte <= 126 {
@@ -74,22 +87,25 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
 
             i += 1;
         }
-        if i % cols != 0 {
-            let width = cols * 2 + usize::div_ceil(cols, groupsize) + 2;
 
+        // Leftover not outputted in ASCII
+        if i % cols != 0 {
             output.push_str(&format!(
                 "{:>w$}",
                 row_ascii,
-                w = width - (row_ascii.len() + usize::div_ceil(row_ascii.len(), groupsize))
+                w = row_ascii.len() // Len of ASCII
+                    + 2 // Padding to the left
+                    + (cols - row_ascii.len()) * byte_width // Width of remaining cols
+                    + (cols - row_ascii.len()) / groupsize // Space seperation between cols
             ));
         }
     }
 
     if !outfile.is_empty() {
         std::fs::write(outfile, output).expect("Unable to write to file.");
-        return;
+    } else {
+        println!("{}", output);
     }
-    println!("{}", output);
 }
 
 // fn read_stdin(options: &options::XXDOptions) {

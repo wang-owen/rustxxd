@@ -57,6 +57,15 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
     } else {
         let mut i = 0;
         while let Some(byte) = data.get(i) {
+            // Check if exceeded -l len
+            match options.len {
+                Some(len) => {
+                    if i == len {
+                        break;
+                    }
+                }
+                None => {}
+            }
             if i == 0 || i % cols == 0 {
                 // ASCII representation
                 if i != 0 {

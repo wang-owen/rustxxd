@@ -76,14 +76,22 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
                 output.push('\n');
 
                 // Offset
-                output.push_str(&format!("{:0>8x}:", i));
+                if options.uppercase {
+                    output.push_str(&format!("{:0>8X}:", i));
+                } else {
+                    output.push_str(&format!("{:0>8x}:", i));
+                }
             }
 
             if i % groupsize == 0 {
                 output.push(' ');
             }
             if !options.bits {
-                output.push_str(&format!("{:0>byte_width$x}", byte));
+                if options.uppercase {
+                    output.push_str(&format!("{:0>byte_width$X}", byte));
+                } else {
+                    output.push_str(&format!("{:0>byte_width$x}", byte));
+                }
             } else {
                 output.push_str(&format!("{:0>byte_width$b}", byte));
             }

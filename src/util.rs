@@ -83,7 +83,7 @@ fn write_formatted(data: &[u8], options: &options::XXDOptions, outfile: String) 
                 }
             }
 
-            if i % groupsize == 0 {
+            if i % groupsize == 0 || i % cols == 0 {
                 output.push(' ');
             }
             if !options.bits {
